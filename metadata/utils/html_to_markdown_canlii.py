@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
+"""
+HTML to Markdown functions from the old Typer version of the CLI. These should 
+be migrated into the markdown.py module as needed.
+"""
 
 import re
 import os
 import shutil
 import glob
+
 import html2text
 import typer
-
-from typing import List
 
 app = typer.Typer()
 
@@ -61,8 +64,8 @@ def convert_file(html_filepath: str, markdown_filepath: str) -> None:
 
 
 def refine_markdown(
-    md_content: str, unwanted_patterns: List[str] = UNWANTED_PATTERNS
-) -> str:
+    md_content: str
+    ) -> str:
     """..."""
 
     md_content = md_content.replace("## ", "# ", 1)
@@ -70,7 +73,7 @@ def refine_markdown(
     md_content = FILE_NUMBER_PATTERN.sub("File number: ", md_content)
     md_content = CITATION_PATTERN.sub("Citation: ", md_content)
 
-    for pattern_str in unwanted_patterns:
+    for pattern_str in UNWANTED_PATTERNS:
         pattern = re.compile(pattern_str)
         md_content = pattern.sub("", md_content)
 
@@ -112,6 +115,10 @@ def convert_all_html_to_markdown(
 
 
 def main():
+    """
+    This is the main entry point for the CLI. It is called when the module is
+    executed as a script.
+    """
     app()
 
 

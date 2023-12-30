@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+"""
+Markdown processing functions. This module should subusme the functions from the
+old html_to_markdown_canlii.py script.
+"""
+
 from typing import Tuple, List
 
 

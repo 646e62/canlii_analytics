@@ -367,10 +367,33 @@ def extract_counsel(metadata_dict: dict) -> None:
                 temp_list.reverse()  # Reverse the order of elements in temp_list
                 for temp_item in temp_list:
                     refined_counsel_list.append(temp_item.strip())
+            elif "appearing on his " in item:
+                temp_list = item.split("appearing on his ")
+                temp_list.reverse()
+                for temp_item in temp_list:
+                    if temp_item == "own behalf":
+                        temp_item = "Self-represented"
+                    refined_counsel_list.append(temp_item.strip())
+            elif "appearing on her " in item:
+                temp_list = item.split("appearing on her ")
+                temp_list.reverse()
+                for temp_item in temp_list:
+                    if temp_item == "own behalf":
+                        temp_item = "Self-represented"
+                    refined_counsel_list.append(temp_item.strip())
+            elif "appearing on their " in item:
+                temp_list = item.split("appearing on their ")
+                temp_list.reverse()
+                for temp_item in temp_list:
+                    if temp_item == "own behalf":
+                        temp_item = "Self-represented"
+                    refined_counsel_list.append(temp_item.strip())
             else:
                 refined_counsel_list.append(item.strip())
 
         print(refined_counsel_list)
+
+
 
         # Iterate through the counsel list. If the string includes " for ", split it into two
         # strings. The first string will be the counsel and the second string will be the party

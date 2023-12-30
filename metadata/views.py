@@ -139,6 +139,7 @@ def index(request):
             context["parties"] = case_dict.get("between", [])
             context["counsel"] = case_dict.get("counsel", [])
             context["case_heard"] = case_dict.get("case heard", "")
+            context["other_citations"] = case_dict.get("other citations", [])
 
         # Saskatchewan Court of Appeal pre=2015 rules
 

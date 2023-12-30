@@ -238,6 +238,21 @@ def extract_dates(text: str) -> List[str]:
     return dates
 
 
+def extract_other_citations(metadata_dict: dict) -> None:
+    """
+    Extracts other citations from the metadata dictionary and saves them as a list.
+
+    Args:
+        metadata_dict (Dict[str, Any]): The metadata dictionary.
+    """
+
+    if "other citations" in metadata_dict:
+        other_citations_value = metadata_dict["other citations"]
+        other_citations_value = other_citations_value.split("-- ")
+        other_citations_value = [item.strip() for item in other_citations_value]
+        other_citations_value = [item for item in other_citations_value if item]
+        metadata_dict["other citations"] = other_citations_value
+
 def convert_appeal_heard_date(metadata_dict: dict) -> None:
     """
     Converts the "appeal heard" key in the metadata dictionary to a list of dates in YYYY-MM-DD
@@ -362,28 +377,34 @@ def extract_counsel(metadata_dict: dict) -> None:
         refined_counsel_list = []
 
         for item in counsel_list:
+            # Deal with "for" entries
             if "for" in item:
                 temp_list = item.split("for")
                 temp_list.reverse()  # Reverse the order of elements in temp_list
                 for temp_item in temp_list:
                     refined_counsel_list.append(temp_item.strip())
+
+            # Deal with self reps
             elif "appearing on his " in item:
                 temp_list = item.split("appearing on his ")
-                temp_list.reverse()
                 for temp_item in temp_list:
                     if temp_item == "own behalf":
                         temp_item = "Self-represented"
                     refined_counsel_list.append(temp_item.strip())
             elif "appearing on her " in item:
                 temp_list = item.split("appearing on her ")
-                temp_list.reverse()
                 for temp_item in temp_list:
                     if temp_item == "own behalf":
                         temp_item = "Self-represented"
                     refined_counsel_list.append(temp_item.strip())
             elif "appearing on their " in item:
                 temp_list = item.split("appearing on their ")
-                temp_list.reverse()
+                for temp_item in temp_list:
+                    if temp_item == "own behalf":
+                        temp_item = "Self-represented"
+                    refined_counsel_list.append(temp_item.strip())
+            elif "on their " in item:
+                temp_list = item.split("on their ")
                 for temp_item in temp_list:
                     if temp_item == "own behalf":
                         temp_item = "Self-represented"
@@ -413,7 +434,7 @@ def extract_counsel(metadata_dict: dict) -> None:
 
             item = clean_counsel_entry(item)
             # Remove an item if it only contains "the" or "and"
-            if item in ["the", "and"]:
+            if item in ["the", "and", "The", "And"]:
                 item = ""
 
             if item:
@@ -501,6 +522,7 @@ def skca_2015(metadata_lines: list):
     for opinion_type in opinion_types:
         define_judicial_aggregate(metadata_dict, opinion_type)
 
+    extract_other_citations(metadata_dict)
     define_coram(metadata_dict)
     convert_appeal_heard_date(metadata_dict)
     define_parties(metadata_dict)

@@ -137,7 +137,8 @@ def identify_case_type(metadata_dict: dict) -> None:
 
     if "file number" in metadata_dict:
 
-        # Split the string at "; " and return a list. If there is no "; ", return the original string as a list item
+        # Split the string at "; " and return a list. If there is no "; ",
+        # return the original string as a list item
 
         file_number_value = metadata_dict["file number"]
         file_number_value = file_number_value.split("; ")
@@ -168,7 +169,10 @@ def extract_dates(text: str) -> List[str]:
     """
 
     month_year_match = re.search(
-        r"\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\b",
+        (
+            r"\b(?:January|February|March|April|May|June|"
+            r"July|August|September|October|November|December)\b"
+        ),
         text,
     )
     if month_year_match:

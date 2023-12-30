@@ -15,7 +15,8 @@ from .rules.skca_2015 import skca_2015
 
 def extract_citations(html_content):
     """
-    Searches the HTML document for judgmelsntLinks and legislationLinks and returns a list of citations.
+    Searches the HTML document for judgmelsntLinks and legislationLinks and returns a list of 
+    citations. 
     judgmentLinks are stored in the div tag <DIV ID="judgmentLinks" STYLE="display: none;">
     legislationLinks are stored in the div tag <DIV ID="legislationLinks" STYLE="display: none;">
     """
@@ -25,7 +26,8 @@ def extract_citations(html_content):
 
     # Find the 'judgmentLinks' div
     judgment_links_div = soup.find('div', id='judgmentLinks')
-    # Find all 'li' elements within the 'judgmentLinks' div and extract 'data-path', excluding 'reflex'
+    # Find all 'li' elements within the 'judgmentLinks' div and extract 'data-path', excluding 
+    # 'reflex'
     # Handle in case there is no 'judgmentLinks' div
     if judgment_links_div:
         case_paths = [li['data-path'] for li in judgment_links_div.find_all('li') if 'data-path' in li.attrs and 'reflex' not in li['data-path']]
@@ -60,6 +62,11 @@ def create_primary_key(citation):
 
 
 def save_file(request, submitted_text, context, url):
+    """
+    Saves the file to disk. If no file path is provided, the default file path is used.
+    Future versions will save the output as a JSON file, rather than saving HTML/Markdown files 
+    to disk.
+    """
     file_path = request.POST.get('filePath')
     if not file_path:
         jurisdiction = url.split('/')[4]

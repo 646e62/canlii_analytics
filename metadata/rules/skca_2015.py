@@ -100,6 +100,13 @@ def define_parties(metadata_dict: dict) -> None:
         metadata_dict["between"] = between_value
 
 def define_coram(metadata_dict: dict) -> None:
+    """
+    Identifies the judges who heard the case and saves them as a list in the metadata dictionary.
+    Although the judges so defined a
+
+    Args:
+        metadata_dict (Dict[str, Any]): The metadata dictionary.
+    """
 
     if "before" in metadata_dict:
         before_value = metadata_dict["before"]

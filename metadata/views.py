@@ -204,6 +204,8 @@ def extract_general_metadata(submitted_text, context):
         # Splitting at either "—" or "|"
         keywords_list = re.split(r"—|\|", keywords_string)
         context["keywords_list"] = [keyword.strip() for keyword in keywords_list]
+        # Remove duplicates
+        context["keywords_list"] = list(set(context["keywords_list"]))
     else:
         context["keywords"] = "None"
 

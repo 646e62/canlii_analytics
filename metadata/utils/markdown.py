@@ -2,6 +2,7 @@
 
 from typing import Tuple, List
 
+
 def import_markdown_file(file_path: str) -> str:
     """
     Reads the contents of a markdown file from a given path.
@@ -18,6 +19,7 @@ def import_markdown_file(file_path: str) -> str:
             return file.read()
     except FileNotFoundError:
         return "File not found."
+
 
 def split_text_at_delimiter(text: str, delimiter: str = "\n__\n") -> Tuple[str, str]:
     """
@@ -40,6 +42,7 @@ def split_text_at_delimiter(text: str, delimiter: str = "\n__\n") -> Tuple[str, 
 
     return before_delimiter, after_delimiter
 
+
 def process_markdown(text: str) -> Tuple[List[str], str]:
     """
     Processes a markdown text string and extracts its metadata lines and main content.
@@ -56,7 +59,7 @@ def process_markdown(text: str) -> Tuple[List[str], str]:
 
     # Split the markdown text at the first occurrence of "\n__\n"
     metadata, main_content = split_text_at_delimiter(text, "\n__\n")
-    metadata = metadata.split('[Home]')[1]
+    metadata = metadata.split("[Home]")[1]
     metadata_lines = [line for line in metadata.splitlines() if line.strip()]
 
     # Corrects for some irregularities in the metadata

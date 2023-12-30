@@ -12,6 +12,8 @@ from typing import List
 from dateutil.parser import parse
 
 PARTY_ROLES = [
+    "Proposed Intervenors",
+    "Proposed Intervenor",
     "Appellants",
     "Appellant",
     "Respondents",
@@ -66,6 +68,7 @@ def define_judicial_aggregate(metadata_dict: dict, key: str) -> None:
             item.replace("Mr. Justice", "")
             .replace("Madam Justice", "")
             .replace("Chief Justice", "")
+            .replace("and", "")
             for item in value
         ]
         metadata_dict[key] = value
@@ -99,6 +102,7 @@ def define_parties(metadata_dict: dict) -> None:
         # Update the 'between' key in the dictionary
         metadata_dict["between"] = between_value
 
+
 def define_coram(metadata_dict: dict) -> None:
     """
     Identifies the judges who heard the case and saves them as a list in the metadata dictionary.
@@ -119,9 +123,14 @@ def define_coram(metadata_dict: dict) -> None:
         before_list = [re.sub(r"\s.*", "", item) for item in before_list]
 
         # Remove an item if it only contains "J.A." or "C.J.S."
-        before_list = [item for item in before_list if item not in ["J.A.", "C.J.S.", "JA", "CJS", "C.J.S"]]
+        before_list = [
+            item
+            for item in before_list
+            if item not in ["J.A.", "C.J.S.", "JA", "CJS", "C.J.S"]
+        ]
 
         metadata_dict["before"] = before_list
+
 
 def split_party_name_and_roles(text, party_roles):
     """
@@ -229,6 +238,21 @@ def extract_dates(text: str) -> List[str]:
     return dates
 
 
+def extract_other_citations(metadata_dict: dict) -> None:
+    """
+    Extracts other citations from the metadata dictionary and saves them as a list.
+
+    Args:
+        metadata_dict (Dict[str, Any]): The metadata dictionary.
+    """
+
+    if "other citations" in metadata_dict:
+        other_citations_value = metadata_dict["other citations"]
+        other_citations_value = other_citations_value.split("-- ")
+        other_citations_value = [item.strip() for item in other_citations_value]
+        other_citations_value = [item for item in other_citations_value if item]
+        metadata_dict["other citations"] = other_citations_value
+
 def convert_appeal_heard_date(metadata_dict: dict) -> None:
     """
     Converts the "appeal heard" key in the metadata dictionary to a list of dates in YYYY-MM-DD
@@ -244,7 +268,7 @@ def convert_appeal_heard_date(metadata_dict: dict) -> None:
         "appeals heard": "appeal",
         "application heard": "application",
         "applications heard": "application",
-        "remand heard": "remand"
+        "remand heard": "remand",
     }
 
     for key, case_type in heard_keys.items():
@@ -275,9 +299,7 @@ def create_metadata_dict(metadata_lines: list) -> dict:
         # Handling "Between" and "Citation" cases
 
         if "Between" in item:
-            print(metadata_lines[index], metadata_lines[index + 1])
             metadata_lines[index] = item
-            print(metadata_lines[index], metadata_lines[index + 1])
 
         if "number:" in item and "Citation:" in item:
             file_number, citation = item.split("Citation:", 1)
@@ -348,12 +370,59 @@ def extract_counsel(metadata_dict: dict) -> None:
 
     if "counsel" in metadata_dict:
         counsel_value = metadata_dict["counsel"]
+        print(counsel_value)
 
         # Split the string on "; " to get individual counsels
         counsel_list = counsel_value.split("; ")
+        refined_counsel_list = []
+
+        for item in counsel_list:
+            # Deal with "for" entries
+            if "for" in item:
+                temp_list = item.split("for")
+                temp_list.reverse()  # Reverse the order of elements in temp_list
+                for temp_item in temp_list:
+                    refined_counsel_list.append(temp_item.strip())
+
+            # Deal with self reps
+            elif "appearing on his " in item:
+                temp_list = item.split("appearing on his ")
+                for temp_item in temp_list:
+                    if temp_item == "own behalf":
+                        temp_item = "Self-represented"
+                    refined_counsel_list.append(temp_item.strip())
+            elif "appearing on her " in item:
+                temp_list = item.split("appearing on her ")
+                for temp_item in temp_list:
+                    if temp_item == "own behalf":
+                        temp_item = "Self-represented"
+                    refined_counsel_list.append(temp_item.strip())
+            elif "appearing on their " in item:
+                temp_list = item.split("appearing on their ")
+                for temp_item in temp_list:
+                    if temp_item == "own behalf":
+                        temp_item = "Self-represented"
+                    refined_counsel_list.append(temp_item.strip())
+            elif "on their " in item:
+                temp_list = item.split("on their ")
+                for temp_item in temp_list:
+                    if temp_item == "own behalf":
+                        temp_item = "Self-represented"
+                    refined_counsel_list.append(temp_item.strip())
+            else:
+                refined_counsel_list.append(item.strip())
+
+        print(refined_counsel_list)
+
+
+
+        # Iterate through the counsel list. If the string includes " for ", split it into two
+        # strings. The first string will be the counsel and the second string will be the party
+        # they represent. If the string does not include " for ", it will be added to the list
+        # as is.
 
         cleaned_counsel_list = []
-        for item in counsel_list:
+        for item in refined_counsel_list:
             # Check for each party role in the counsel string
             for role in PARTY_ROLES:
                 if role in item:
@@ -364,6 +433,10 @@ def extract_counsel(metadata_dict: dict) -> None:
                     break  # Stop checking further once a role is found
 
             item = clean_counsel_entry(item)
+            # Remove an item if it only contains "the" or "and"
+            if item in ["the", "and", "The", "And"]:
+                item = ""
+
             if item:
                 cleaned_counsel_list.append(item)
 
@@ -439,13 +512,17 @@ def skca_2015(metadata_lines: list):
     metadata_dict = create_metadata_dict(metadata_lines)
     opinion_types = [
         "written reasons by",
+        "majority reasons by",
+        "dissenting reasons by",
+        "minority reasons by",
+        "concurring reasons by",
         "in concurrence",
         "in dissent",
-        "concurring reasons by",
     ]
     for opinion_type in opinion_types:
         define_judicial_aggregate(metadata_dict, opinion_type)
 
+    extract_other_citations(metadata_dict)
     define_coram(metadata_dict)
     convert_appeal_heard_date(metadata_dict)
     define_parties(metadata_dict)

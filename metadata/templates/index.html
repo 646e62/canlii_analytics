@@ -71,8 +71,17 @@
                 <li>{{ file }}</li>
             {% endfor %}
         </ul>
-        <p><strong>Parties:</strong></p>
+        
+        {% if other_citations %}
+        <p><strong>Other citations:</strong></p>
+        <ul>
+            {% for citation in other_citations %}
+                <li>{{ citation }}</li>
+            {% endfor %}
+        </ul><br>
+        {% endif %}
 
+        <p><strong>Parties:</strong></p>
         <ul>
         {% for party in parties %}
             <li><strong>{{ party.1 }}</strong>: {{ party.0 }}</li><br>
@@ -88,12 +97,24 @@
         </ul>
 
         <p><strong>Disposition:</strong> {{ disposition }}</p>
+        {% if written_reasons %}
         <p><strong>Written reasons by:</strong></p>
         <ul>
             {% for judge in written_reasons %}
                 <li>{{ judge }}</li>
             {% endfor %}
         </ul>
+        {% endif %}
+
+        {% if majority_reasons %}
+        <p><strong>Majority reasons by:</strong></p>
+        <ul>
+            {% for judge in majority_reasons %}
+                <li>{{ judge }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
         {% if concurring %}
 
             <p><strong>Concurring:</strong></p>
@@ -110,6 +131,28 @@
             <p><strong>Concurring reasons by:</strong></p>
             <ul>
                 {% for judge in concurring_reasons %}
+                    <li>{{ judge }}</li>
+                {% endfor %}
+            </ul>
+
+        {% endif %}
+
+        {% if minority_reasons %}
+
+            <p><strong>Minority reasons by:</strong></p>
+            <ul>
+                {% for judge in minority_reasons %}
+                    <li>{{ judge }}</li>
+                {% endfor %}
+            </ul>
+
+        {% endif %}
+
+        {% if dissenting_reasons %}
+
+            <p><strong>Dissenting reasons by:</strong></p>
+            <ul>
+                {% for judge in dissenting_reasons %}
                     <li>{{ judge }}</li>
                 {% endfor %}
             </ul>

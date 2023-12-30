@@ -30,6 +30,8 @@ PARTY_ROLES = [
     "Non-Party",
     "Non-parties",
     "Non-party",
+    "Non Parties",
+    "Non Party",
     "Third Parties",
     "Third Party",
     "self-represented",
@@ -58,7 +60,12 @@ def define_judicial_aggregate(metadata_dict: dict, key: str) -> None:
 
     if key in metadata_dict:
         value = metadata_dict[key]
-        value = [item.replace("Mr. Justice", "").replace("Madam Justice", "").replace("Chief Justice", "") for item in value]
+        value = [
+            item.replace("Mr. Justice", "")
+            .replace("Madam Justice", "")
+            .replace("Chief Justice", "")
+            for item in value
+        ]
         metadata_dict[key] = value
 
 
@@ -69,7 +76,7 @@ def define_parties(metadata_dict: dict) -> None:
     Args:
         metadata_dict (Dict[str, Any]): The metadata dictionary.
     """
-    
+
     if "between" in metadata_dict:
         # Split the string at the word "And"
         between_value = metadata_dict["between"]
@@ -87,7 +94,6 @@ def define_parties(metadata_dict: dict) -> None:
             if split_result not in between_value:
                 between_value.append(split_result)
 
-
         # Update the 'between' key in the dictionary
         metadata_dict["between"] = between_value
 
@@ -95,11 +101,11 @@ def define_parties(metadata_dict: dict) -> None:
 def split_party_name_and_roles(text, party_roles):
     """
     Splits each text into two parts: party name and party roles.
-    
+
     Args:
     text (str): The text containing party names and roles.
     party_roles (list): A list of party roles.
-    
+
     Returns:
     tuple: A tuple with the party name and a string containing all roles.
     """
@@ -130,9 +136,9 @@ def identify_case_type(metadata_dict: dict) -> None:
     """
 
     if "file number" in metadata_dict:
-        
+
         # Split the string at "; " and return a list. If there is no "; ", return the original string as a list item
-        
+
         file_number_value = metadata_dict["file number"]
         file_number_value = file_number_value.split("; ")
         file_number_value = [item.strip() for item in file_number_value]
@@ -234,6 +240,7 @@ def convert_appeal_heard_date(metadata_dict: dict) -> None:
         metadata_dict["case heard"] = remand_heard_value
         metadata_dict["case type"] = "remand"
 
+
 def create_metadata_dict(metadata_lines: list) -> dict:
     """
     Creates a metadata dictionary from a list of strings.
@@ -252,7 +259,6 @@ def create_metadata_dict(metadata_lines: list) -> dict:
     for index, item in enumerate(metadata_lines):
         # Handling "Between" and "Citation" cases
 
-        
         if "Between" in item:
             print(metadata_lines[index], metadata_lines[index + 1])
             metadata_lines[index] = item
@@ -327,7 +333,7 @@ def extract_counsel(metadata_dict: dict) -> None:
 
     if "counsel" in metadata_dict:
         counsel_value = metadata_dict["counsel"]
-        
+
         # Split the string on "; " to get individual counsels
         counsel_list = counsel_value.split("; ")
 
@@ -346,12 +352,12 @@ def extract_counsel(metadata_dict: dict) -> None:
             if item:
                 cleaned_counsel_list.append(item)
 
-
         # Create tuples from the cleaned list
         lawyer_party_tuples = create_lawyer_party_tuples(cleaned_counsel_list)
-        
+
         # Update the 'counsel' key in the dictionary
         metadata_dict["counsel"] = lawyer_party_tuples
+
 
 def clean_counsel_entry(entry):
     """
@@ -363,7 +369,19 @@ def clean_counsel_entry(entry):
     Returns:
         str: A cleaned counsel entry.
     """
-    phrases_to_remove = ["for the", "appearing on his", "appearing on her", "on his", "on her", ", K.C.,", ", Q.C.,", ", K.C.", ", Q.C."]
+    phrases_to_remove = [
+        "for the",
+        "appearing on his",
+        "appearing on her",
+        "on his",
+        "on her",
+        ", K.C.,",
+        ", Q.C.,",
+        ", K.C.",
+        ", Q.C.",
+        ", QC",
+        ", KC",
+    ]
     for phrase in phrases_to_remove:
         entry = entry.replace(phrase, "").strip()
     entry = entry.replace("own behalf", "self-represented")
@@ -385,10 +403,11 @@ def create_lawyer_party_tuples(lawyers_parties_list):
     # Iterate over the list in steps of 2 to pair each lawyer(s) with the corresponding party
     for i in range(0, len(lawyers_parties_list), 2):
         # Check if the next element exists to avoid IndexError
-        if i+1 < len(lawyers_parties_list):
-            tuples_list.append((lawyers_parties_list[i], lawyers_parties_list[i+1]))
+        if i + 1 < len(lawyers_parties_list):
+            tuples_list.append((lawyers_parties_list[i], lawyers_parties_list[i + 1]))
 
     return tuples_list
+
 
 def skca_2015(metadata_lines: list):
     """
@@ -416,7 +435,12 @@ def skca_2015(metadata_lines: list):
         metadata_dict["before"] = before_list
 
     # Classify the judge's appeal position
-    opinion_types = ["written reasons by", "in concurrence", "in dissent", "concurring reasons by"]
+    opinion_types = [
+        "written reasons by",
+        "in concurrence",
+        "in dissent",
+        "concurring reasons by",
+    ]
     for opinion_type in opinion_types:
         define_judicial_aggregate(metadata_dict, opinion_type)
 

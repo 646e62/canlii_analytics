@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CanLII General Metadata Analytics</title>
+    <h1>CanLII General Metadata Analytics</h1>
+    <p>Extracts and compile general metadata from published CanLII decisions.</p>
+    <h2>Page source</h2>
+    <style>
+        textarea {
+            width: 85%;
+            height: 100px;
+            margin: 1%;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <form method="post">
+        {% csrf_token %}
+        <textarea name="textfield" placeholder="Enter text" autofocus></textarea>
+        <br>
+        <button type="submit">Submit</button>
+        <br>
+        <br>
+    <script>
+        function toggleFilePathInput() {
+            var checkbox = document.getElementById('saveFileCheckbox');
+            var inputDiv = document.getElementById('filePathInput');
+            if (checkbox.checked) {
+                inputDiv.style.display = 'block';
+            } else {
+                inputDiv.style.display = 'none';
+            }
+        }
+        
+        // Function to toggle visibility of (dev) Case Metadata
+        function toggleDevMetadata() {
+            var displayCheckbox = document.getElementById('displayMetadata');
+            var devMetadataSection = document.getElementById('devMetadataSection');
+            
+            if (displayCheckbox.checked) {
+                devMetadataSection.style.display = 'block';
+            } else {
+                devMetadataSection.style.display = 'none';
+            }
+        }
+        
+        // Call the toggleDevMetadata function when the checkbox changes
+        document.getElementById('displayMetadata').addEventListener('change', toggleDevMetadata);
+        
+        // Initial call to toggleDevMetadata to ensure it works when the page loads
+        toggleDevMetadata();
+    </script>
+
+    {% if message %}
+    <p>{{ message }}</p>
+    {% endif %}
+
+    {% if rules_exist %}
+        <h2>Case metadata</h2>
+        <p><strong>Before:</strong></p>
+        <ul>
+            {% for judge in before %}
+                <li>{{ judge }}</li>
+            {% endfor %}
+        </ul>
+        <p><strong>Case type:</strong> {{ case_type }}</p>
+        <p><strong>File number:</strong></p>
+        <ul>
+            {% for file in file_number %}
+                <li>{{ file }}</li>
+            {% endfor %}
+        </ul>
+        <p><strong>Parties:</strong></p>
+
+        <ul>
+        {% for party in parties %}
+            <li><strong>{{ party.1 }}</strong>: {{ party.0 }}</li><br>
+        {% endfor %}
+        </ul>
+
+        <p><strong>Counsel:</strong></p>
+
+        <ul>
+        {% for item in counsel %}
+            <li><strong>{{ item.0 }}:</strong> {{ item.1 }}</li><br>
+        {% endfor %}
+        </ul>
+
+        <p><strong>Disposition:</strong> {{ disposition }}</p>
+        <p><strong>Written reasons by:</strong></p>
+        <ul>
+            {% for judge in written_reasons %}
+                <li>{{ judge }}</li>
+            {% endfor %}
+        </ul>
+        {% if concurring %}
+
+            <p><strong>Concurring:</strong></p>
+            <ul>
+                {% for judge in concurring %}
+                    <li>{{ judge }}</li>
+                {% endfor %}
+            </ul>
+
+        {% endif %}
+
+        {% if concurring_reasons %}
+
+            <p><strong>Concurring reasons by:</strong></p>
+            <ul>
+                {% for judge in concurring_reasons %}
+                    <li>{{ judge }}</li>
+                {% endfor %}
+            </ul>
+
+        {% endif %}
+
+        {% if dissenting %}
+
+            <p><strong>Dissenting:</strong></p>
+            <ul>
+                {% for judge in dissenting %}
+                    <li>{{ judge }}</li>
+                {% endfor %}
+            </ul>
+
+        {% endif %}
+
+    {% endif %}
+    
+
+    <h2>General Metadata</h2>
+
+    {% if case_info_available %}
+        <p><strong>Primary Key:</strong> {{ primary_key }}</p>
+        <p><strong>Citation:</strong> <em>{{ style_of_cause }}</em>, {{ citation }}</p>
+        {% if url and url != 'None' %}
+            <p><strong>URL:</strong> <a href="{{ url }}" target="_blank">{{ url }}</a></p>
+        {% else %}
+            <p><strong>URL:</strong> None</p>
+        {% endif %}
+
+        {% if short_url and short_url != 'None' %}
+            <p><strong>Short URL:</strong> <a href="{{ short_url }}" target="_blank">{{ short_url }}</a></p>
+        {% else %}
+            <p><strong>Short URL:</strong> None</p>
+        {% endif %}
+        <p><strong>Decision Year:</strong> {{ decision_year }}</p>
+        <p><strong>Case Heard:</strong></p>
+        {% if case_heard %}
+            <ul>
+                {% for case in case_heard %}
+                    <li>{{ case }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+                <p>None</p>
+        {% endif %}
+        <p><strong>Decision Date:</strong> {{ decision_date }}</p>
+        <p><strong>Language:</strong> {{ language }}</p>
+        <p><strong>Court Level:</strong> {{ court_level }}</p>
+        <p><strong>Jurisdiction:</strong> {{ jurisdiction }}</p>
+        <p><strong>CanLII Keywords:</strong></p>
+        <ul>
+            {% for keyword in keywords_list %}
+                <li>{{ keyword }}</li>
+            {% endfor %}
+        </ul>
+        <p><strong>Categories:</strong></p>
+        <ul>
+            {% for subject in subjects_list %}
+                <li>{{ subject }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <!-- (dev) Case Metadata section -->
+    <div id="devMetadataSection">
+        <h2>Case Metadata (dev)</h2>
+        <ol>
+            {% for item in headnote %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ol>
+    </div>
+
+    <h2>Links</h2>
+    <h3>Case Links</h3>
+    <ul>
+        {% for link in case_links %}
+            <li>{{ link | safe }}</li>
+        {% endfor %}
+    </ul>
+
+
+    <h3>Legislation Links</h3>
+    <ul>
+        {% for link in legislation_links %}
+            <li>{{ link | safe}}</li>
+        {% endfor %}
+    </ul>
+
+
+    <form method="post">
+        <input type="checkbox" id="saveFileCheckbox" name="saveFile" onchange="toggleFilePathInput()" checked> Save file locally
+        <br>
+        <div id="filePathInput">
+            <label for="filePath">File path:</label>
+            <input type="text" id="filePath" name="filePath" placeholder="/path/to/save/file.txt">
+        </div>
+        <br>
+        <input type="checkbox" id="displayMetadata" name="displayMetadata" checked> Show (dev) Case Metadata
+    </form>    
+
+</body>
+</html>

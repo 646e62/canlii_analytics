@@ -7,7 +7,7 @@ import glob
 import html2text
 import typer
 
-from typing import Dict, List, Union
+from typing import List
 
 app = typer.Typer()
 

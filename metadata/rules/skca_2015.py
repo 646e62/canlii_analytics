@@ -35,6 +35,8 @@ PARTY_ROLES = [
     "Third Parties",
     "Third Party",
     "self-represented",
+    "Interested Parties",
+    "Interested Party",
 ]
 
 

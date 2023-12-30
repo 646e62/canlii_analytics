@@ -60,7 +60,7 @@ def save_file(request, submitted_text, context, url):
     markdown_file_path = os.path.splitext(file_path)[0] + ".md"
     try:
         convert_file(file_path, markdown_file_path)
-        context["message"] = f"File successfully written to {file_path}.md"
+        context["message"] = f"Source code for {primary_key} backed up locally."
     except IOError as e:
         context["message"] += f" | An error occurred while converting to Markdown: {e}"
 
@@ -85,8 +85,6 @@ def process_main_content(main_content):
         # Replace "]               " with "] "
         paragraph = re.sub(r"\]\s+", "] ", paragraph)
 
-        print(paragraph)
-
 
 def index(request):
     """
@@ -96,14 +94,12 @@ def index(request):
     if request.method == "POST":
         submitted_text = request.POST.get("textfield")
 
-        # Extract general metadata
+        # Extract general metadata from HTML using the general rule set
         extract_general_metadata(submitted_text, context)
 
         # Save the file to disk if the saveFile checkbox is checked
         if "saveFile" in request.POST:  # Check if the save file box is checked
             save_file(request, submitted_text, context, context.get("url", ""))
-
-        # Court-specific metadata extraction and cleaning
 
         # Create a markdown file for jurisdiction-specific analysis
         markdown_content = html_to_markdown(submitted_text)
@@ -115,8 +111,7 @@ def index(request):
         context["headnote"] = metadata_lines
 
         # Check to see if any special rules apply
-        # Will need to be replaced with an extensible solution once more rules are added
-
+        # Saskatchewan Court of Appeal 2015 rules
         context["rules"] = "default"
         if (
             context["jurisdiction"] == "Saskatchewan"
@@ -134,6 +129,9 @@ def index(request):
             )
             context["file_number"] = case_dict.get("file number", "")
             context["written_reasons"] = case_dict.get("written reasons by", [])
+            context["majority_reasons"] = case_dict.get("majority reasons by", [])
+            context["minority_reasons"] = case_dict.get("minority reasons by", [])
+            context["dissenting_reasons"] = case_dict.get("dissenting reasons by", [])
             context["concurring"] = case_dict.get("in concurrence", [])
             context["dissenting"] = case_dict.get("in dissent", [])
             context["concurring_reasons"] = case_dict.get("concurring reasons by", [])
@@ -141,5 +139,8 @@ def index(request):
             context["parties"] = case_dict.get("between", [])
             context["counsel"] = case_dict.get("counsel", [])
             context["case_heard"] = case_dict.get("case heard", "")
+
+        # Saskatchewan Court of Appeal pre=2015 rules
+
 
     return render(request, "index.html", context)

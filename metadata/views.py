@@ -204,6 +204,8 @@ def extract_general_metadata(submitted_text, context):
         # Splitting at either "—" or "|"
         keywords_list = re.split(r"—|\|", keywords_string)
         context["keywords_list"] = [keyword.strip() for keyword in keywords_list]
+        # Remove duplicates
+        context["keywords_list"] = list(set(context["keywords_list"]))
     else:
         context["keywords"] = "None"
 
@@ -219,6 +221,26 @@ def extract_general_metadata(submitted_text, context):
 
     else:
         context["subjects"] = "None"
+
+def process_main_content(main_content):
+    """
+    Processes the main content of the markdown file.
+    """
+
+    # Split the main_content string whenever the pattern "\n__\n" is found
+    # This will split the main_content into paragraphs
+    paragraphs = main_content.split("\n__\n")
+    print(len(paragraphs))
+    for paragraph in paragraphs:
+        # Remove any leading or trailing whitespace
+        paragraph = paragraph.strip()
+        # Remove any leading or trailing newlines
+        paragraph = paragraph.replace("\n", " ")
+
+        # Replace "]               " with "] "
+        paragraph = re.sub(r"\]\s+", "] ", paragraph)
+
+        print(paragraph)
 
 
 def index(request):
@@ -244,6 +266,7 @@ def index(request):
 
         # Extract the headnote, file content and assign to context
         metadata_lines, main_content = process_markdown(refined_markdown_content)
+        process_main_content(main_content)
         context["headnote"] = metadata_lines
 
         # Check to see if any special rules apply

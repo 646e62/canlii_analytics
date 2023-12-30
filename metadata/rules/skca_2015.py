@@ -99,6 +99,29 @@ def define_parties(metadata_dict: dict) -> None:
         # Update the 'between' key in the dictionary
         metadata_dict["between"] = between_value
 
+def define_coram(metadata_dict: dict) -> None:
+    """
+    Identifies the judges who heard the case and saves them as a list in the metadata dictionary.
+    Although the judges so defined a
+
+    Args:
+        metadata_dict (Dict[str, Any]): The metadata dictionary.
+    """
+
+    if "before" in metadata_dict:
+        before_value = metadata_dict["before"]
+        before_list = re.split(
+            r"\s*,\s*|\s*\band\b\s*", before_value, flags=re.IGNORECASE
+        )
+
+        # Strip whitespace and filter out empty strings
+        before_list = [item.strip() for item in before_list if item.strip()]
+        before_list = [re.sub(r"\s.*", "", item) for item in before_list]
+
+        # Remove an item if it only contains "J.A." or "C.J.S."
+        before_list = [item for item in before_list if item not in ["J.A.", "C.J.S.", "JA", "CJS", "C.J.S"]]
+
+        metadata_dict["before"] = before_list
 
 def split_party_name_and_roles(text, party_roles):
     """
@@ -216,35 +239,21 @@ def convert_appeal_heard_date(metadata_dict: dict) -> None:
         metadata_dict (Dict[str, Any]): The metadata dictionary.
     """
 
-    if "appeal heard" in metadata_dict:
-        appeal_heard_value = metadata_dict["appeal heard"]
-        appeal_heard_value = extract_dates(appeal_heard_value)
-        metadata_dict["case heard"] = appeal_heard_value
-        metadata_dict["case type"] = "appeal"
+    heard_keys = {
+        "appeal heard": "appeal",
+        "appeals heard": "appeal",
+        "application heard": "application",
+        "applications heard": "application",
+        "remand heard": "remand"
+    }
 
-    if "appeals heard" in metadata_dict:
-        appeals_heard_value = metadata_dict["appeals heard"]
-        appeals_heard_value = extract_dates(appeals_heard_value)
-        metadata_dict["case heard"] = appeals_heard_value
-        metadata_dict["case type"] = "appeal"
-
-    if "application heard" in metadata_dict:
-        application_heard_value = metadata_dict["application heard"]
-        application_heard_value = extract_dates(application_heard_value)
-        metadata_dict["case heard"] = application_heard_value
-        metadata_dict["case type"] = "application"
-
-    if "applications heard" in metadata_dict:
-        applications_heard_value = metadata_dict["applications heard"]
-        applications_heard_value = extract_dates(applications_heard_value)
-        metadata_dict["case heard"] = applications_heard_value
-        metadata_dict["case type"] = "application"
-
-    if "remand heard" in metadata_dict:
-        remand_heard_value = metadata_dict["remand heard"]
-        remand_heard_value = extract_dates(remand_heard_value)
-        metadata_dict["case heard"] = remand_heard_value
-        metadata_dict["case type"] = "remand"
+    for key, case_type in heard_keys.items():
+        if key in metadata_dict:
+            heard_value = metadata_dict[key]
+            heard_value = extract_dates(heard_value)
+            metadata_dict["case heard"] = heard_value
+            metadata_dict["case type"] = case_type
+            break  # Assumes only one key is present, remove if multiple keys can be present
 
 
 def create_metadata_dict(metadata_lines: list) -> dict:
@@ -428,19 +437,6 @@ def skca_2015(metadata_lines: list):
     """
 
     metadata_dict = create_metadata_dict(metadata_lines)
-
-    if "before" in metadata_dict:
-        before_value = metadata_dict["before"]
-        before_list = re.split(
-            r"\s*,\s*|\s*\band\b\s*", before_value, flags=re.IGNORECASE
-        )
-
-        # Strip whitespace and filter out empty strings
-        before_list = [item.strip() for item in before_list if item.strip()]
-        before_list = [re.sub(r"\s.*", "", item) for item in before_list]
-        metadata_dict["before"] = before_list
-
-    # Classify the judge's appeal position
     opinion_types = [
         "written reasons by",
         "in concurrence",
@@ -450,6 +446,7 @@ def skca_2015(metadata_lines: list):
     for opinion_type in opinion_types:
         define_judicial_aggregate(metadata_dict, opinion_type)
 
+    define_coram(metadata_dict)
     convert_appeal_heard_date(metadata_dict)
     define_parties(metadata_dict)
     identify_case_type(metadata_dict)

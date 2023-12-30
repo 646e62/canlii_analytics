@@ -429,6 +429,7 @@ def skca_2015(metadata_lines: list):
 
     metadata_dict = create_metadata_dict(metadata_lines)
 
+
     if "before" in metadata_dict:
         before_value = metadata_dict["before"]
         before_list = re.split(
@@ -438,6 +439,10 @@ def skca_2015(metadata_lines: list):
         # Strip whitespace and filter out empty strings
         before_list = [item.strip() for item in before_list if item.strip()]
         before_list = [re.sub(r"\s.*", "", item) for item in before_list]
+
+        # Remove an item if it only contains "J.A." or "C.J.S."
+        before_list = [item for item in before_list if item not in ["J.A.", "C.J.S.", "JA", "CJS"]]
+
         metadata_dict["before"] = before_list
 
     # Classify the judge's appeal position

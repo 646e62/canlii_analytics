@@ -12,6 +12,8 @@ from typing import List
 from dateutil.parser import parse
 
 PARTY_ROLES = [
+    "Proposed Intervenors",
+    "Proposed Intervenor",
     "Appellants",
     "Appellant",
     "Respondents",
@@ -99,6 +101,7 @@ def define_parties(metadata_dict: dict) -> None:
         # Update the 'between' key in the dictionary
         metadata_dict["between"] = between_value
 
+
 def define_coram(metadata_dict: dict) -> None:
     """
     Identifies the judges who heard the case and saves them as a list in the metadata dictionary.
@@ -119,9 +122,14 @@ def define_coram(metadata_dict: dict) -> None:
         before_list = [re.sub(r"\s.*", "", item) for item in before_list]
 
         # Remove an item if it only contains "J.A." or "C.J.S."
-        before_list = [item for item in before_list if item not in ["J.A.", "C.J.S.", "JA", "CJS", "C.J.S"]]
+        before_list = [
+            item
+            for item in before_list
+            if item not in ["J.A.", "C.J.S.", "JA", "CJS", "C.J.S"]
+        ]
 
         metadata_dict["before"] = before_list
+
 
 def split_party_name_and_roles(text, party_roles):
     """
@@ -244,7 +252,7 @@ def convert_appeal_heard_date(metadata_dict: dict) -> None:
         "appeals heard": "appeal",
         "application heard": "application",
         "applications heard": "application",
-        "remand heard": "remand"
+        "remand heard": "remand",
     }
 
     for key, case_type in heard_keys.items():

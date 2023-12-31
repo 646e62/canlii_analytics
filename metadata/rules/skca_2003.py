@@ -89,7 +89,7 @@ def define_parties(metadata_dict: dict) -> None:
     if "between" in metadata_dict:
         # Split the string at the word "And"
         between_value = metadata_dict["between"]
-        between_parts = between_value.split("And ")
+        between_parts = between_value.split(r"\- and -")
 
         # Initialize an empty list to store the results
         between_value = []
@@ -97,8 +97,21 @@ def define_parties(metadata_dict: dict) -> None:
         for part in between_parts:
             # Remove underscores and extra spaces
             part = part.replace("_", "").strip()
+
+
             # Split each part into party name and party roles
             split_result = split_party_name_and_roles(part, PARTY_ROLES)
+            print(split_result)
+            # If the first item ends with "(", remove it and add it to the second item
+            # Enclose the first item in a closing bracket
+            if split_result[0].endswith("("):
+                split_result = (
+                    split_result[0][:-1],
+                    "(" + split_result[1],
+                )
+
+            print(split_result)
+
             # Only add the split result if it's not already in the list
             if split_result not in between_value:
                 between_value.append(split_result)
@@ -116,10 +129,10 @@ def define_coram(metadata_dict: dict) -> None:
         metadata_dict (Dict[str, Any]): The metadata dictionary.
     """
 
-    if "before" in metadata_dict:
-        before_value = metadata_dict["before"]
+    if "coram" in metadata_dict:
+        before_value = metadata_dict["coram"]
         before_list = re.split(
-            r"\s*,\s*|\s*\band\b\s*", before_value, flags=re.IGNORECASE
+            r"\s*,\s*|\s*\band\b\s*|\s*&\s*", before_value, flags=re.IGNORECASE
         )
 
         # Strip whitespace and filter out empty strings
@@ -133,7 +146,28 @@ def define_coram(metadata_dict: dict) -> None:
             if item not in ["J.A.", "C.J.S.", "JA", "CJS", "C.J.S", "JJ.A."]
         ]
 
-        metadata_dict["before"] = before_list
+        metadata_dict["coram"] = before_list
+
+    # In some cases, "coram" will be displayed as "before". This typically happens in
+    # single-judge applications. The following code handles this case.
+    elif "before" in metadata_dict:
+        before_value = metadata_dict["before"]
+        before_list = re.split(
+            r"\s*,\s*|\s*\band\b\s*|\s*&\s*", before_value, flags=re.IGNORECASE
+        )
+
+        # Strip whitespace and filter out empty strings
+        before_list = [item.strip() for item in before_list if item.strip()]
+        before_list = [re.sub(r"\s.*", "", item) for item in before_list]
+
+        # Remove an item if it only contains "J.A." or "C.J.S."
+        before_list = [
+            item
+            for item in before_list
+            if item not in ["J.A.", "C.J.S.", "JA", "CJS", "C.J.S", "JJ.A."]
+        ]
+
+        metadata_dict["coram"] = before_list
 
 
 def split_party_name_and_roles(text, party_roles):
@@ -318,6 +352,10 @@ def create_metadata_dict(metadata_lines: list) -> dict:
         if "Between" in item:
             metadata_lines[index] = item
 
+        # Remove a line entirely if it begins with "Docket:"
+        if item.startswith("Docket:"):
+            metadata_lines[index] = ""
+
         if "number:" in item and "Citation:" in item:
             file_number, citation = item.split("Citation:", 1)
             if "File number:" not in file_number:
@@ -336,6 +374,14 @@ def create_metadata_dict(metadata_lines: list) -> dict:
 
     # Remove the last line if it starts with "#"
     if metadata_lines and metadata_lines[-1].startswith("#"):
+        metadata_lines.pop()
+
+    # Remove the last line if it starts with "I. " or "A. "
+    # These patterns appears in several 2014 SKCA decisions
+    if metadata_lines and metadata_lines[-1].startswith("I. "):
+        metadata_lines.pop()
+
+    if metadata_lines and metadata_lines[-1].startswith("A. "):
         metadata_lines.pop()
 
     # Remove the last line
@@ -513,9 +559,12 @@ def create_lawyer_party_tuples(lawyers_parties_list):
     return tuples_list
 
 
-def skca_2015(metadata_lines: list):
+def skca_2003(metadata_lines: list):
     """
-    Extracts metadata from a Saskatchewan Court of Appeal decision from 2015 onward.
+    Processes a markdown file and prints its metadata line by line,
+    starting from the first line that begins with the "#" character.
+
+    These steps are specific to SKCA decisions from 2015 to present (2023).
 
     Args:
         file_path (str): The path to the markdown file.
@@ -524,13 +573,13 @@ def skca_2015(metadata_lines: list):
 
     metadata_dict = create_metadata_dict(metadata_lines)
     opinion_types = [
-        "written reasons by",
         "majority reasons by",
         "dissenting reasons by",
         "minority reasons by",
         "concurring reasons by",
         "in concurrence",
         "in dissent",
+        "by",
     ]
     for opinion_type in opinion_types:
         define_judicial_aggregate(metadata_dict, opinion_type)
@@ -553,12 +602,12 @@ def skca_2015(metadata_lines: list):
         # Update the 'disposition' key in the dictionary
         metadata_dict["disposition"] = disposition_value
 
-    if "on appeal from" in metadata_dict:
+    if "from" in metadata_dict:
         # Split the string at "," and return a list.
         # If there are more than two items, recombine all but the last item
         # and append the recombined string to the top of the list.
         # Return two items
-        on_appeal_from_value = metadata_dict["on appeal from"]
+        on_appeal_from_value = metadata_dict["from"]
         on_appeal_from_value = on_appeal_from_value.split(", ")
         if len(on_appeal_from_value) > 2:
             on_appeal_from_value = [
@@ -567,11 +616,14 @@ def skca_2015(metadata_lines: list):
             ]
         on_appeal_from_value = [item.strip() for item in on_appeal_from_value]
         on_appeal_from_value = [item for item in on_appeal_from_value if item]
-        # Remove the string "J.C. of " if it exists in the second item
+        
+        # Remove judicial centre strings (J.C., JC, etc)
         if len(on_appeal_from_value) > 1 and "J.C. of " in on_appeal_from_value[1]:
             on_appeal_from_value[-1] = on_appeal_from_value[-1].replace("J.C. of ", "")
+        if len(on_appeal_from_value) > 1 and "J.C. " in on_appeal_from_value[1]:
+            on_appeal_from_value[-1] = on_appeal_from_value[-1].replace("J.C. ", "")
 
-        metadata_dict["on appeal from"] = on_appeal_from_value
+        metadata_dict["from"] = on_appeal_from_value
 
     if "on application from" in metadata_dict:
         # Split the string at "," and return a list.
@@ -587,25 +639,31 @@ def skca_2015(metadata_lines: list):
             ]
         on_appeal_from_value = [item.strip() for item in on_appeal_from_value]
         on_appeal_from_value = [item for item in on_appeal_from_value if item]
-        metadata_dict["on appeal from"] = on_appeal_from_value
+        metadata_dict["from"] = on_appeal_from_value
 
     return metadata_dict
 
 
-def skca_2015_instructions(context, metadata_lines):
+def skca_2003_instructions(context, metadata_lines):
+    """
+    Processes a markdown file and prints its metadata line by line,
+    starting from the first line that begins with the "#" character.
+
+    These steps are specific to SKCA decisions from 2003 to 2015.
+    """
 
     context["rules_exist"] = "SKCA 2015 rules"
-    case_dict = skca_2015(metadata_lines)
+    case_dict = skca_2003(metadata_lines)
 
     # Use .get() method to safely access dictionary keys
     context["short_url"] = case_dict.get("url", "")
-    context["before"] = case_dict.get("before", [])
+    context["before"] = case_dict.get("coram", [])
     context["case_type"] = (
         case_dict.get("case type", ""),
         case_dict.get("field", ""),
     )
     context["file_number"] = case_dict.get("file number", "")
-    context["written_reasons"] = case_dict.get("written reasons by", [])
+    context["written_reasons"] = case_dict.get("by", [])
     context["majority_reasons"] = case_dict.get("majority reasons by", [])
     context["minority_reasons"] = case_dict.get("minority reasons by", [])
     context["dissenting_reasons"] = case_dict.get("dissenting reasons by", [])
@@ -618,4 +676,4 @@ def skca_2015_instructions(context, metadata_lines):
     context["case_heard"] = case_dict.get("case heard", "")
     context["other_citations"] = case_dict.get("other citations", [])
     context["disposition_value"] = case_dict.get("disposition", "")
-    context["appeal_from"] = case_dict.get("on appeal from", "")
+    context["appeal_from"] = case_dict.get("from", "")

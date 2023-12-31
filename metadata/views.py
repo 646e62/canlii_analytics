@@ -14,7 +14,8 @@ from .utils.html_to_markdown_canlii import (
 
 from .utils.markdown import process_markdown
 
-from .rules.skca_2015 import skca_2015
+from .rules.skca_2003 import skca_2003_instructions
+from .rules.skca_2015 import skca_2015_instructions
 from .rules.general import extract_general_metadata
 
 
@@ -117,31 +118,21 @@ def index(request):
             context["jurisdiction"] == "Saskatchewan"
             and int(context["decision_year"]) >= 2016
         ):
-            context["rules_exist"] = "SKCA 2015 rules"
-            case_dict = skca_2015(metadata_lines)
+            skca_2015_instructions(context, metadata_lines)
+            context["rules"] = "skca_2015"
 
-            # Use .get() method to safely access dictionary keys
-            context["short_url"] = case_dict.get("url", "")
-            context["before"] = case_dict.get("before", [])
-            context["case_type"] = (
-                case_dict.get("case type", ""),
-                case_dict.get("field", ""),
-            )
-            context["file_number"] = case_dict.get("file number", "")
-            context["written_reasons"] = case_dict.get("written reasons by", [])
-            context["majority_reasons"] = case_dict.get("majority reasons by", [])
-            context["minority_reasons"] = case_dict.get("minority reasons by", [])
-            context["dissenting_reasons"] = case_dict.get("dissenting reasons by", [])
-            context["concurring"] = case_dict.get("in concurrence", [])
-            context["dissenting"] = case_dict.get("in dissent", [])
-            context["concurring_reasons"] = case_dict.get("concurring reasons by", [])
-            context["disposition"] = case_dict.get("disposition", "")
-            context["parties"] = case_dict.get("between", [])
-            context["counsel"] = case_dict.get("counsel", [])
-            context["case_heard"] = case_dict.get("case heard", "")
-            context["other_citations"] = case_dict.get("other citations", [])
+        if context["jurisdiction"] == "Saskatchewan" and int(context["decision_year"]) == 2015:
+            context["rules"] = "skca_2003, skca_2015"
+            skca_2015_instructions(context, metadata_lines)
+            # Check if 'before' section is empty. If so, use the 2003 rules
+            if not context["before"]:
+                skca_2003_instructions(context, metadata_lines)
+                context["rules"] = "skca_2003"
+            else:
+                context["rules"] = "skca_2015"
 
-        # Saskatchewan Court of Appeal pre=2015 rules
-
+        if context["jurisdiction"] == "Saskatchewan" and int(context["decision_year"]) <= 2014 and int(context["decision_year"]) >= 2003:
+            skca_2003_instructions(context, metadata_lines)
+            context["rules"] = "skca_2003"
 
     return render(request, "index.html", context)

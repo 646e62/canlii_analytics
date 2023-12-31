@@ -7,7 +7,6 @@ old html_to_markdown_canlii.py script.
 
 from typing import Tuple, List
 
-
 def import_markdown_file(file_path: str) -> str:
     """
     Reads the contents of a markdown file from a given path.
@@ -65,6 +64,9 @@ def process_markdown(text: str) -> Tuple[List[str], str]:
     # Split the markdown text at the first occurrence of "\n__\n"
     metadata, main_content = split_text_at_delimiter(text, "\n__\n")
     metadata = metadata.split("[Home]")[1]
+
+    
+
     metadata_lines = [line for line in metadata.splitlines() if line.strip()]
 
     # Corrects for some irregularities in the metadata
@@ -77,6 +79,18 @@ def process_markdown(text: str) -> Tuple[List[str], str]:
         for line in metadata_lines
         if "Expanded Collapsed" not in line and "[PDF]" not in line
     ]
+
+    # If both "File number:" and "Other citations:" are present, move "Other citations:" to the next line
+    # Corrects for an error in some SKCA decisions
+    if "File number:" in metadata_lines and "Other citations:" in metadata_lines:
+        file_number_index = metadata_lines.index("File number:")
+        other_citations_index = metadata_lines.index("Other citations:")
+        metadata_lines.insert(other_citations_index + 1, metadata_lines.pop(file_number_index))
+
+    if "File number:" in metadata_lines and "Other citation:" in metadata_lines:
+        file_number_index = metadata_lines.index("File number:")
+        other_citations_index = metadata_lines.index("Other citation:")
+        metadata_lines.insert(other_citations_index + 1, metadata_lines.pop(file_number_index))
 
     # Remove asterisks wherever they appear
     metadata_lines = [line.replace("*", "") for line in metadata_lines]

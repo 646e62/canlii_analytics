@@ -64,6 +64,15 @@
                 <li>{{ judge }}</li>
             {% endfor %}
         </ul>
+
+        {% if appeal_from %}
+        <p><strong>Appeal from:</strong></p>
+        <ul>
+            <li><strong>Court:</strong> {{appeal_from.0}} </li>
+            <li><strong>City:</strong> {{appeal_from.1}}</li>
+        </ul>
+        {% endif %}
+
         <p><strong>Case type:</strong> {{ case_type }}</p>
         <p><strong>File number:</strong></p>
         <ul>
@@ -78,13 +87,13 @@
             {% for citation in other_citations %}
                 <li>{{ citation }}</li>
             {% endfor %}
-        </ul><br>
+        </ul>
         {% endif %}
 
         <p><strong>Parties:</strong></p>
         <ul>
         {% for party in parties %}
-            <li><strong>{{ party.1 }}</strong>: {{ party.0 }}</li><br>
+            <li><strong>{{ party.1 }}</strong>: {{ party.0 }}</li>
         {% endfor %}
         </ul>
 
@@ -92,11 +101,22 @@
 
         <ul>
         {% for item in counsel %}
-            <li><strong>{{ item.0 }}:</strong> {{ item.1 }}</li><br>
+            <li><strong>{{ item.0 }}:</strong></li><br>
+            <ul>
+                {% for counsel in item.1 %}
+                    <li>{{ counsel }}</li>
+                {% endfor %}
+            </ul><br>
         {% endfor %}
         </ul>
 
-        <p><strong>Disposition:</strong> {{ disposition }}</p>
+        <p><strong>Disposition:</strong></p>
+        <ul>
+            {% for item in disposition %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
         {% if written_reasons %}
         <p><strong>Written reasons by:</strong></p>
         <ul>

@@ -76,7 +76,7 @@ def process_main_content(main_content):
     # Split the main_content string whenever the pattern "\n__\n" is found
     # This will split the main_content into paragraphs
     paragraphs = main_content.split("\n__\n")
-    print(len(paragraphs))
+    
     for paragraph in paragraphs:
         # Remove any leading or trailing whitespace
         paragraph = paragraph.strip()

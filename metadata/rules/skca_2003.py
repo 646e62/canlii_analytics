@@ -91,32 +91,22 @@ def define_parties(metadata_dict: dict) -> None:
         between_parts = between_value.split(r"\- and -")
 
         # Initialize an empty list to store the results
-        between_value = []
+        processed_parties = []
 
         for part in between_parts:
             # Remove underscores and extra spaces
             part = part.replace("_", "").strip()
 
-
             # Split each part into party name and party roles
-            split_result = split_party_name_and_roles(part, PARTY_ROLES)
-            print(split_result)
-            # If the first item ends with "(", remove it and add it to the second item
-            # Enclose the first item in a closing bracket
-            if split_result[0].endswith("("):
-                split_result = (
-                    split_result[0][:-1],
-                    "(" + split_result[1],
-                )
+            split_results = split_party_name_and_roles(part, PARTY_ROLES)
 
-            print(split_result)
-
-            # Only add the split result if it's not already in the list
-            if split_result not in between_value:
-                between_value.append(split_result)
+            for split_result in split_results:
+                # Only add the split result if it's not already in the list
+                if split_result not in processed_parties:
+                    processed_parties.append(split_result)
 
         # Update the 'between' key in the dictionary
-        metadata_dict["between"] = between_value
+        metadata_dict["between"] = processed_parties
 
 
 def define_coram(metadata_dict: dict) -> None:
@@ -171,14 +161,15 @@ def define_coram(metadata_dict: dict) -> None:
 
 def split_party_name_and_roles(text, party_roles):
     """
-    Splits each text into two parts: party name and party roles.
+    Splits each text into two parts: party names and party roles.
+    Additionally, splits multiple party names in a single string.
 
     Args:
-    text (str): The text containing party names and roles.
-    party_roles (list): A list of party roles.
+        text (str): The text containing party names and roles.
+        party_roles (list): A list of party roles.
 
     Returns:
-    tuple: A tuple with the party name and a string containing all roles.
+        list: A list of tuples, each containing a party name and a string containing the role.
     """
     # Create a regex pattern to find party roles
     pattern = r"(" + "|".join(re.escape(role) for role in party_roles) + r")"
@@ -189,10 +180,17 @@ def split_party_name_and_roles(text, party_roles):
     if match:
         # Split the text at the start of the matched role
         index = match.start()
-        return text[:index].strip(), text[index:].strip()
+        party_names = text[:index].strip()
+        role = text[index:].strip()
+
+        # Split multiple party names
+        split_names = re.split(r",\s*and\s*|,\s*|\s*and\s+", party_names)
+        print(split_names)
+
+        return [(name.strip(), role) for name in split_names]
     else:
         # No role found, return the whole text as the party name and an empty string for the role
-        return text, ""
+        return [(text, "")]
 
 
 def identify_case_type(metadata_dict: dict) -> None:

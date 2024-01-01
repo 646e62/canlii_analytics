@@ -13,6 +13,7 @@ from ..utils.jurisdiction import (
     define_legislative_network,
 )
 
+
 def create_primary_key(citation):
     """
     Creates a file path from a citation.
@@ -22,6 +23,7 @@ def create_primary_key(citation):
     primary_key = citation.split("/")[-1].split(".")[0]
 
     return primary_key
+
 
 def extract_citations(html_content):
     """
@@ -67,6 +69,7 @@ def extract_citations(html_content):
     legislation_paths = define_legislative_network(list(set(legislation_paths)))
 
     return case_paths, legislation_paths
+
 
 def extract_general_metadata(submitted_text, context):
     """

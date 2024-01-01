@@ -19,6 +19,7 @@ app = typer.Typer()
 # General purpose functions
 ###
 
+
 def split_text_at_delimiter(text: str, delimiter: str = "\n__\n") -> Tuple[str, str]:
     """
     Splits the text at the first occurrence of the specified delimiter.
@@ -97,9 +98,11 @@ def create_metadata_md(file_path: str) -> str:
 
     return metadata_lines, main_content
 
+
 ###
 # Functions specific to SKCA decisions from 2015 to present (2023)
 ###
+
 
 @app.command()
 def skca_2015(file_path: str):
@@ -336,14 +339,20 @@ def process_metadata_lines(metadata_lines: List[str]) -> Dict[str, Any]:
     if "counsel" in metadata_dict:
         counsel_value = metadata_dict["counsel"]
         # Regular expression pattern with capturing parentheses to retain delimiters
-        delimiters = (
-            r"(for|Appellants|Appellant|Respondents|Respondent|own behalf|Intervenor|Court Services)"
-        )
+        delimiters = r"(for|Appellants|Appellant|Respondents|Respondent|own behalf|Intervenor|Court Services)"
         # Splitting the string at delimiters, case insensitive, retaining delimiters
         counsel_list = re.split(delimiters, counsel_value, flags=re.IGNORECASE)
 
         # Cleaning the list: Removing empty strings, trimming whitespace, removing specific phrases, and replacing "own behalf"
-        phrases_to_remove = ["for the", "appearing on his", "appearing on her", "on his", "on her" ", K.C.,", ", Q.C.,", ", K.C."]
+        phrases_to_remove = [
+            "for the",
+            "appearing on his",
+            "appearing on her",
+            "on his",
+            "on her" ", K.C.,",
+            ", Q.C.,",
+            ", K.C.",
+        ]
         cleaned_counsel_list = []
         for item in counsel_list:
             item = item.strip()
@@ -359,16 +368,17 @@ def process_metadata_lines(metadata_lines: List[str]) -> Dict[str, Any]:
 
         # Update the 'counsel' key in the dictionary
         metadata_dict["counsel"] = cleaned_counsel_list
-        
 
     # Remove the extraneous "file number" key before returning the dictionary
     metadata_dict.pop("file number", None)
 
     return metadata_dict
 
+
 ###
 # MBCA functions
 ###
+
 
 @app.command()
 def mbca(file_path: str):
@@ -413,9 +423,11 @@ def mbca(file_path: str):
     for key, value in metadata_dict.items():
         typer.echo(f"{key}: {value}")
 
+
 ###
 # Functions for exporting metadata to a JSON file, pd dataframe, or CSV file
 ###
+
 
 def save_metadata_to_json(file_path: str, metadata_dict: Dict[str, Any]) -> str:
     """
@@ -436,6 +448,7 @@ def save_metadata_to_json(file_path: str, metadata_dict: Dict[str, Any]) -> str:
 
     return output_file_name
 
+
 # View a directory and add all files to a list
 def view_directories(directories: List[str]) -> List[str]:
     """View all markdown files in a list of directories."""
@@ -448,6 +461,7 @@ def view_directories(directories: List[str]) -> List[str]:
 
     return files
 
+
 def generate_dataframe(directories: List[str]) -> pd.DataFrame:
     """Generate a pandas DataFrame from multiple markdown files in multiple directories."""
     files = view_directories(directories)
@@ -456,11 +470,14 @@ def generate_dataframe(directories: List[str]) -> pd.DataFrame:
         metadata = process_metadata_lines(create_metadata_md(file_path)[0])
         if metadata:  # Ensure there is metadata to add
             metadata_list.append(metadata)
-    
+
     return pd.DataFrame(metadata_list)
 
+
 @app.command()
-def export_to_csv(directories: List[str] = typer.Argument(...), output_csv: str = typer.Argument(...)):
+def export_to_csv(
+    directories: List[str] = typer.Argument(...), output_csv: str = typer.Argument(...)
+):
     """
     Export metadata from markdown files in multiple directories to a CSV file.
 
@@ -471,6 +488,7 @@ def export_to_csv(directories: List[str] = typer.Argument(...), output_csv: str 
     df = generate_dataframe(directories)
     df.to_csv(output_csv, index=False)
     typer.echo(f"Data exported to CSV file: {output_csv}")
+
 
 if __name__ == "__main__":
     app()

@@ -46,36 +46,66 @@ PARTY_ROLES = [
 ]
 
 
-def define_judicial_aggregate(metadata_dict: dict, key: str) -> None:
+def define_judicial_aggregate(metadata_dict: dict) -> None:
     """
     Defines a judicial aggregate in the metadata dictionary. Designed to work with skca_2015().
 
     Args:
         metadata_dict (Dict[str, Any]): The metadata dictionary.
-        key (str): The key to be defined as a judicial aggregate.
     """
+
+    opinion_types = [
+        "written reasons by",
+        "majority reasons by",
+        "majority reasons",
+        "dissenting reasons by",
+        "dissenting reasons",
+        "minority reasons by",
+        "minority reasons",
+        "concurring reasons by",
+        "concurring reasons",
+        "in concurrence",
+        "in dissent",
+        "by",
+    ]
+
+    standardized_roles = {
+        "written reasons by": "reasons",
+        "majority reasons by": "reasons",
+        "majority reasons": "reasons",
+        "dissenting reasons by": "dissenting reasons",
+        "dissenting reasons": "dissenting reasons",
+        "minority reasons by": "dissenting reasons",
+        "minority reasons": "dissenting reasons",
+        "concurring reasons by": "concurring reasons",
+        "concurring reasons": "concurring reasons",
+        "in concurrence": "concurring",
+        "in dissent": "dissenting",
+        "by": "reasons"
+    }
+
     split_pattern = "The Honourable "
-    if key in metadata_dict:
-        value = metadata_dict[key]
-        value = value.split(split_pattern)
-        value = [item.strip() for item in value]
-        value = [item for item in value if item]
-        metadata_dict[key] = value
-    else:
-        metadata_dict[key] = []
+    justice_titles = ["Mr. Justice", "Madam Justice", "Chief Justice"]
 
-    # Remove "Mr. Justice" and "Madam Justice" from the list items
+    for key in opinion_types:
+        if key in metadata_dict:
+            value = metadata_dict[key]
+            value = value.split(split_pattern)
+            value = [item.strip() for item in value if item]
 
-    if key in metadata_dict:
-        value = metadata_dict[key]
-        value = [
-            item.replace("Mr. Justice", "")
-            .replace("Madam Justice", "")
-            .replace("Chief Justice", "")
-            .replace("and", "")
-            for item in value
-        ]
-        metadata_dict[key] = value
+            # Creating tuples of (judge's name, standardized role)
+            processed_values = []
+            for item in value:
+                for title in justice_titles:
+                    item = item.replace(title, "").strip()
+                item = item.replace("and", "").strip()
+                standardized_role = standardized_roles.get(key, key)
+                processed_values.append((item, standardized_role))
+
+            metadata_dict[key] = processed_values
+        else:
+            metadata_dict[key] = []
+
 
 def define_parties(metadata_dict: dict) -> None:
     """
@@ -554,19 +584,8 @@ def skca_2003(metadata_lines: list):
     """
 
     metadata_dict = create_metadata_dict(metadata_lines)
-    opinion_types = [
-        "majority reasons by",
-        "dissenting reasons by",
-        "minority reasons by",
-        "concurring reasons by",
-        "concurring reasons",
-        "in concurrence",
-        "in dissent",
-        "by",
-    ]
-    for opinion_type in opinion_types:
-        define_judicial_aggregate(metadata_dict, opinion_type)
 
+    define_judicial_aggregate(metadata_dict)
     extract_other_citations(metadata_dict)
     define_coram(metadata_dict)
     convert_appeal_heard_date(metadata_dict)
@@ -650,12 +669,14 @@ def skca_2003_instructions(context, metadata_lines):
     context["majority_reasons"] = case_dict.get("majority reasons by", [])
     context["minority_reasons"] = case_dict.get("minority reasons by", [])
     context["dissenting_reasons"] = case_dict.get("dissenting reasons by", [])
-    context["concurring"] = case_dict.get("in concurrence", [])
-    context["dissenting"] = case_dict.get("in dissent", [])
     if case_dict.get("concurring reasons by"):
         context["concurring_reasons"] = case_dict.get("concurring reasons by", [])
     else:
         context["concurring_reasons"] = case_dict.get("concurring reasons", [])
+    context["majority"] = case_dict.get("majority", [])
+    context["minority"] = case_dict.get("minority", [])
+    context["concurring"] = case_dict.get("in concurrence", [])
+    context["dissenting"] = case_dict.get("in dissent", [])
     context["disposition"] = case_dict.get("disposition", "")
     context["parties"] = case_dict.get("between", [])
     context["counsel"] = case_dict.get("counsel", [])

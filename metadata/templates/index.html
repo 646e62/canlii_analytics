@@ -238,16 +238,6 @@
         </ul>
     {% endif %}
 
-    <!-- (dev) Case Metadata section -->
-    <div id="devMetadataSection">
-        <h2>Case Metadata (dev)</h2>
-        <ol>
-            {% for item in headnote %}
-                <li>{{ item }}</li>
-            {% endfor %}
-        </ol>
-    </div>
-
     <h2>Links</h2>
     <h3>Case Links</h3>
     <ul>
@@ -263,6 +253,16 @@
             <li>{{ link | safe}}</li>
         {% endfor %}
     </ul>
+
+    <!-- (dev) Case Metadata section -->
+    <div id="devMetadataSection">
+        <h2>Case Metadata (dev)</h2>
+        <ol>
+            {% for item in headnote %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ol>
+    </div>
 
 
     <form method="post">

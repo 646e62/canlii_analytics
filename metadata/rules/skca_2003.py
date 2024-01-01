@@ -9,7 +9,7 @@ Rule set for Saskatchewan Court of Appeal decisions from 2015 onward.
 import re
 
 from typing import List
-from dateutil.parser import parse
+from dateutil import parser
 
 PARTY_ROLES = [
     "Proposed Intervenors",
@@ -76,7 +76,6 @@ def define_judicial_aggregate(metadata_dict: dict, key: str) -> None:
             for item in value
         ]
         metadata_dict[key] = value
-
 
 def define_parties(metadata_dict: dict) -> None:
     """
@@ -232,7 +231,7 @@ def identify_case_type(metadata_dict: dict) -> None:
 def extract_dates(text: str) -> List[str]:
     """
     Extracts dates from a string in the format "Month Day, Year" and returns a list of dates in
-    YYYY-MM-DD format.
+    YYYY-MM-DD format. Invalid dates are not included in the return list.
 
     Args:
         text (str): The string from which to extract dates.
@@ -241,40 +240,21 @@ def extract_dates(text: str) -> List[str]:
         List[str]: A list of dates in YYYY-MM-DD format.
     """
 
-    month_year_match = re.search(
-        (
-            r"\b(?:January|February|March|April|May|June|"
-            r"July|August|September|October|November|December)\b"
-        ),
-        text,
-    )
-    if month_year_match:
-        month = month_year_match.group()
-    else:
-        # If no month is found, return an empty list or handle as needed
-        return []
+    # Regular expression for matching dates in the Month Day, Year format
+    date_regex = r"\b(?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}\b"
+    matches = re.findall(date_regex, text)
 
-    # Find the year in the string
-    year_match = re.search(r"\b\d{4}\b", text)
-    if year_match:
-        year = year_match.group()
-    else:
-        # If no year is found, return an empty list or handle as needed
-        return []
+    valid_dates = []
+    for date_str in matches:
+        try:
+            # Parse each date string and append if valid
+            parsed_date = parser.parse(date_str, dayfirst=False, yearfirst=False)
+            valid_dates.append(parsed_date.strftime("%Y-%m-%d"))
+        except ValueError:
+            # Skip invalid dates
+            continue
 
-    # Find all individual days
-    days = re.findall(r"\b\d{1,2}\b", text)
-
-    # List to hold the final dates
-    dates = []
-
-    for day in days:
-        # Parse and format each date
-        date_str = f"{month} {day}, {year}"
-        date = parse(date_str)
-        dates.append(date.strftime("%Y-%m-%d"))
-
-    return dates
+    return valid_dates
 
 
 def extract_other_citations(metadata_dict: dict) -> None:
@@ -326,6 +306,10 @@ def convert_appeal_heard_date(metadata_dict: dict) -> None:
         if key in metadata_dict:
             heard_value = metadata_dict[key]
             heard_value = extract_dates(heard_value)
+
+            # Verify that the output is a real date using the dateutil parser
+            # If not, save the original string as a single-item list
+
             metadata_dict["case heard"] = heard_value
             metadata_dict["case type"] = case_type
             break  # Assumes only one key is present, remove if multiple keys can be present
@@ -577,6 +561,7 @@ def skca_2003(metadata_lines: list):
         "dissenting reasons by",
         "minority reasons by",
         "concurring reasons by",
+        "concurring reasons",
         "in concurrence",
         "in dissent",
         "by",
@@ -669,7 +654,10 @@ def skca_2003_instructions(context, metadata_lines):
     context["dissenting_reasons"] = case_dict.get("dissenting reasons by", [])
     context["concurring"] = case_dict.get("in concurrence", [])
     context["dissenting"] = case_dict.get("in dissent", [])
-    context["concurring_reasons"] = case_dict.get("concurring reasons by", [])
+    if case_dict.get("concurring reasons by"):
+        context["concurring_reasons"] = case_dict.get("concurring reasons by", [])
+    else:
+        context["concurring_reasons"] = case_dict.get("concurring reasons", [])
     context["disposition"] = case_dict.get("disposition", "")
     context["parties"] = case_dict.get("between", [])
     context["counsel"] = case_dict.get("counsel", [])
